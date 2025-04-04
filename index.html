@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cidade Financeira - Jogo de Orçamento</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --text: #333;
+            --light: #ecf0f1;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        
+        .game-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        
+        .tagline {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .city-display {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            min-height: 500px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .city-background {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            background: linear-gradient(to right, #27ae60, #2ecc71);
+            z-index: 1;
+        }
+        
+        .building {
+            position: absolute;
+            bottom: 200px;
+            width: 80px;
+            height: 120px;
+            background-color: #95a5a6;
+            z-index: 2;
+            transition: all 0.3s;
+        }
+        
+        .building::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 20px;
+            background-color: #7f8c8d;
+            bottom: -20px;
+        }
+        
+        .building.water {
+            background-color: #3498db;
+        }
+        
+        .building.power {
+            background-color: #f1c40f;
+        }
+        
+        .building.house {
+            background-color: #e74c3c;
+        }
+        
+        .building.park {
+            background-color: #2ecc71;
+            height: 60px;
+        }
+        
+        .building.school {
+            background-color: #9b59b6;
+        }
+        
+        .building.hospital {
+            background-color: white;
+            border: 3px solid #e74c3c;
+        }
+        
+        .game-panel {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .resources {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .resource {
+            background-color: var(--light);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .resource-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .money {
+            color: var(--success);
+        }
+        
+        .population {
+            color: var(--secondary);
+        }
+        
+        .happiness {
+            color: var(--warning);
+        }
+        
+        .time {
+            color: var(--primary);
+        }
+        
+        .actions {
+            margin-top: 20px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--secondary);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .cost {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .characters {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        
+        .character {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        
+        .character img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 10px;
+            object-fit: cover;
+            border: 3px solid var(--secondary);
+        }
+        
+        .character-info h4 {
+            margin: 0;
+            color: var(--primary);
+        }
+        
+        .character-info p {
+            margin: 5px 0 0;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        .event-log {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: var(--light);
+            border-radius: 5px;
+        }
+        
+        .event {
+            padding: 8px;
+            margin-bottom: 5px;
+            background-color: white;
+            border-radius: 3px;
+            font-size: 0.9rem;
+            border-left: 3px solid var(--secondary);
+        }
+        
+        .event.warning {
+            border-left-color: var(--warning);
+        }
+        
+        .event.danger {
+            border-left-color: var(--accent);
+        }
+        
+        .event.success {
+            border-left-color: var(--success);
+        }
+        
+        .level-indicator {
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, var(--secondary), var(--success));
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.5s;
+        }
+        
+        @media (max-width: 768px) {
+            .game-area {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <header>
+            <h1>Cidade Financeira</h1>
+            <p class="tagline">Gerencie seu orçamento e construa uma cidade próspera!</p>
+        </header>
+        
+        <div class="level-indicator">Nível 1: Fundações da Cidade</div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="game-area">
+            <div class="city-display">
+                <div class="city-background"></div>
+                <!-- Edifícios serão adicionados dinamicamente aqui -->
+            </div>
+            
+            <div class="game-panel">
+                <div class="resources">
+                    <div class="resource">
+                        <div>Dinheiro</div>
+                        <div class="resource-value money" id="money">R$ 10.000</div>
+                    </div>
+                    <div class="resource">
+                        <div>População</div>
+                        <div class="resource-value population" id="population">100</div>
+                    </div>
+                    <div class="resource">
+                        <div>Felicidade</div>
+                        <div class="resource-value happiness" id="happiness">60%</div>
+                    </div>
+                    <div class="resource">
+                        <div>Mês</div>
+                        <div class="resource-value time" id="time">1</div>
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <h3>Ações</h3>
+                    <button onclick="build('house')">Construir Casa (+50 pop)<br><span class="cost">Custo: R$ 2.000</span></button>
+                    <button onclick="build('water')">Construir Estação de Água (+5% felicidade)<br><span class="cost">Custo: R$ 3.500</span></button>
+                    <button onclick="build('power')">Construir Usina de Energia (+10% felicidade)<br><span class="cost">Custo: R$ 5.000</span></button>
+                    <button onclick="build('park')">Construir Parque (+15% felicidade)<br><span class="cost">Custo: R$ 2.500</span></button>
+                    <button onclick="nextMonth()">Avançar para o Próximo Mês</button>
+                </div>
+                
+                <div class="characters">
+                    <h3>Seus Assessores</h3>
+                    <div class="character">
+                        <img src="https://i.imgur.com/J7l5wqj.png" alt="Ana">
+                        <div class="character-info">
+                            <h4>Ana</h4>
+                            <p>Economista Chefe</p>
+                            <p id="anaAdvice">"Vamos começar construindo casas para aumentar a população!"</p>
+                        </div>
+                    </div>
+                    <div class="character">
+                        <img src="https://i.imgur.com/mQ4Wyxj.png" alt="Guilherme">
+                        <div class="character-info">
+                            <h4>Guilherme</h4>
+                            <p>Gestor Financeiro</p>
+                            <p id="guilhermeAdvice">"Monitore cuidadosamente seus gastos mensais."</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="event-log" id="eventLog">
+                    <div class="event">Bem-vindo ao Cidade Financeira! Seu objetivo é gerenciar o orçamento da cidade e torná-la próspera.</div>
+                    <div class="event">Ana e Guilherme estão aqui para te aconselhar durante seu mandato.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Estado do jogo
+        const gameState = {
+            money: 10000,
+            population: 100,
+            happiness: 60,
+            time: 1,
+            level: 1,
+            progress: 0,
+            buildings: [],
+            anaAdvice: [
+                "Vamos começar construindo casas para aumentar a população!",
+                "A felicidade dos cidadãos está baixa, precisamos de parques ou serviços básicos.",
+                "Cuidado com os gastos excessivos neste mês!",
+                "Invista em infraestrutura para aumentar a felicidade a longo prazo.",
+                "Estamos com bom caixa, podemos investir em projetos maiores."
+            ],
+            guilhermeAdvice: [
+                "Monitore cuidadosamente seus gastos mensais.",
+                "Priorize projetos que tragam retorno financeiro.",
+                "A população crescente exigirá mais serviços básicos.",
+                "Manter a felicidade acima de 70% traz benefícios econômicos.",
+                "Considere economizar para meses mais difíceis."
+            ],
+            buildingCosts: {
+                house: 2000,
+                water: 3500,
+                power: 5000,
+                park: 2500,
+                school: 6000,
+                hospital: 8000
+            },
+            buildingEffects: {
+                house: { population: 50 },
+                water: { happiness: 5 },
+                power: { happiness: 10 },
+                park: { happiness: 15 },
+                school: { happiness: 10, population: -10 },
+                hospital: { happiness: 20 }
+            },
+            levelRequirements: [
+                { population: 200, happiness: 70, buildings: 3 },
+                { population: 500, happiness: 75, buildings: 6 },
+                { population: 1000, happiness: 80, buildings: 9 },
+                { population: 2000, happiness: 85, buildings: 12 }
+            ]
+        };
+
+        // Atualiza a interface do jogo
+        function updateUI() {
+            document.getElementById('money').textContent = `R$ ${gameState.money.toLocaleString()}`;
+            document.getElementById('population').textContent = gameState.population;
+            document.getElementById('happiness').textContent = `${gameState.happiness}%`;
+            document.getElementById('time').textContent = gameState.time;
+            document.getElementById('progressBar').style.width = `${gameState.progress}%`;
+            
+            // Atualiza conselhos aleatórios
+            document.getElementById('anaAdvice').textContent = 
+                gameState.anaAdvice[Math.floor(Math.random() * gameState.anaAdvice.length)];
+            document.getElementById('guilhermeAdvice').textContent = 
+                gameState.guilhermeAdvice[Math.floor(Math.random() * gameState.guilhermeAdvice.length)];
+            
+            // Atualiza descrição do nível
+            const levelDescriptions = [
+                "Nível 1: Fundações da Cidade",
+                "Nível 2: Crescimento Urbano",
+                "Nível 3: Metrópole em Ascensão",
+                "Nível 4: Capital Financeira"
+            ];
+            document.querySelector('.level-indicator').textContent = 
+                levelDescriptions[gameState.level - 1] || "Nível Máximo Atingido!";
+        }
+
+        // Adiciona um evento ao log
+        function addEvent(message, type = '') {
+            const eventLog = document.getElementById('eventLog');
+            const eventElement = document.createElement('div');
+            eventElement.className = `event ${type}`;
+            eventElement.textContent = message;
+            eventLog.appendChild(eventElement);
+            eventLog.scrollTop = eventLog.scrollHeight;
+        }
+
+        // Constrói um edifício
+        function build(type) {
+            const cost = gameState.buildingCosts[type];
+            
+            if (gameState.money < cost) {
+                addEvent("Fundos insuficientes para esta construção!", "warning");
+                return;
+            }
+            
+            gameState.money -= cost;
+            gameState.buildings.push(type);
+            
+            // Aplica efeitos do edifício
+            const effects = gameState.buildingEffects[type];
+            if (effects.population) gameState.population += effects.population;
+            if (effects.happiness) gameState.happiness = Math.min(100, gameState.happiness + effects.happiness);
+            
+            // Renderiza o edifício na cidade
+            renderBuilding(type);
+            
+            // Mensagem de sucesso
+            const buildingNames = {
+                house: "Casa Residencial",
+                water: "Estação de Água",
+                power: "Usina de Energia",
+                park: "Parque Público",
+                school: "Escola",
+                hospital: "Hospital"
+            };
+            
+            addEvent(`${buildingNames[type]} construída!`, "success");
+            
+            // Verifica progresso
+            checkProgress();
+            updateUI();
+        }
+
+        // Renderiza um edifício na cidade
+        function renderBuilding(type) {
+            const cityDisplay = document.querySelector('.city-display');
+            const building = document.createElement('div');
+            building.className = `building ${type}`;
+            
+            // Posição aleatória
+            const left = 50 + (Math.random() * 600);
+            building.style.left = `${left}px`;
+            
+            // Altura variável para alguns edifícios
+            if (type === 'house') {
+                building.style.height = `${80 + (Math.random() * 70)}px`;
+            }
+            
+            cityDisplay.appendChild(building);
+            
+            // Efeito de construção
+            building.style.opacity = '0';
+            building.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                building.style.opacity = '1';
+                building.style.transform = 'translateY(0)';
+            }, 100);
+        }
+
+        // Avança para o próximo mês
+        function nextMonth() {
+            gameState.time++;
+            
+            // Receita mensal baseada na população e felicidade
+            const revenue = Math.floor(gameState.population * (gameState.happiness / 20));
+            gameState.money += revenue;
+            
+            // Custos mensais baseados em edifícios
+            const maintenance = gameState.buildings.length * 150;
+            gameState.money -= maintenance;
+            
+            // Atualiza felicidade (pode diminuir se não houver serviços básicos)
+            const basicServices = gameState.buildings.filter(b => b === 'water' || b === 'power').length;
+            if (basicServices < Math.floor(gameState.population / 300)) {
+                gameState.happiness = Math.max(0, gameState.happiness - 5);
+                addEvent("A população está insatisfeita com a falta de serviços básicos!", "warning");
+            }
+            
+            // Eventos aleatórios
+            if (Math.random() < 0.4) {
+                randomEvent();
+            }
+            
+            addEvent(`Mês ${gameState.time}: Receita de R$ ${revenue.toLocaleString()} e custos de R$ ${maintenance.toLocaleString()}`, "success");
+            
+            // Verifica progresso
+            checkProgress();
+            updateUI();
+        }
+
+        // Evento aleatório
+        function randomEvent() {
+            const events = [
+                {
+                    message: "Crise econômica! Sua receita foi reduzida pela metade este mês.",
+                    effect: () => { gameState.money = Math.floor(gameState.money / 2); },
+                    type: "danger"
+                },
+                {
+                    message: "Festival da Cidade! A felicidade aumentou em 10%.",
+                    effect: () => { gameState.happiness = Math.min(100, gameState.happiness + 10); },
+                    type: "success"
+                },
+                {
+                    message: "Imigração em massa! A população aumentou em 20%.",
+                    effect: () => { gameState.population = Math.floor(gameState.population * 1.2); },
+                    type: "success"
+                },
+                {
+                    message: "Epidemia! A felicidade diminuiu e os custos médicos reduziram seu caixa.",
+                    effect: () => { 
+                        gameState.happiness = Math.max(0, gameState.happiness - 15);
+                        gameState.money = Math.max(0, gameState.money - 2000);
+                    },
+                    type: "danger"
+                },
+                {
+                    message: "Descoberta de recursos naturais! Receita extra este mês.",
+                    effect: () => { gameState.money += 3000; },
+                    type: "success"
+                }
+            ];
+            
+            const randomEvent = events[Math.floor(Math.random() * events.length)];
+            randomEvent.effect();
+            addEvent(`Evento: ${randomEvent.message}`, randomEvent.type);
+        }
+
+        // Verifica o progresso do jogador
+        function checkProgress() {
+            if (gameState.level >= 4) return;
+            
+            const requirements = gameState.levelRequirements[gameState.level - 1];
+            let progress = 0;
+            
+            // Calcula progresso baseado nos requisitos
+            const popProgress = Math.min(100, Math.floor((gameState.population / requirements.population) * 100));
+            const happyProgress = Math.min(100, Math.floor((gameState.happiness / requirements.happiness) * 100));
+            const buildProgress = Math.min(100, Math.floor((gameState.buildings.length / requirements.buildings) * 100));
+            
+            progress = Math.floor((popProgress + happyProgress + buildProgress) / 3);
+            gameState.progress = progress;
+            
+            // Verifica se avançou de nível
+            if (popProgress >= 100 && happyProgress >= 100 && buildProgress >= 100) {
+                gameState.level++;
+                gameState.progress = 0;
+                
+                // Recompensa por avançar de nível
+                gameState.money += 10000;
+                gameState.happiness = Math.min(100, gameState.happiness + 10);
+                
+                addEvent(`Parabéns! Você avançou para o nível ${gameState.level} e recebeu um bônus de R$ 10.000!`, "success");
+                
+                // Desbloqueia novos edifícios
+                if (gameState.level >= 2) {
+                    const actionsDiv = document.querySelector('.actions');
+                    if (!document.getElementById('schoolBtn')) {
+                        const schoolBtn = document.createElement('button');
+                        schoolBtn.id = 'schoolBtn';
+                        schoolBtn.innerHTML = 'Construir Escola (+10% felicidade, -10 pop)<br><span class="cost">Custo: R$ 6.000</span>';
+                        schoolBtn.onclick = () => build('school');
+                        actionsDiv.insertBefore(schoolBtn, actionsDiv.lastChild);
+                    }
+                }
+                
+                if (gameState.level >= 3) {
+                    const actionsDiv = document.querySelector('.actions');
+                    if (!document.getElementById('hospitalBtn')) {
+                        const hospitalBtn = document.createElement('button');
+                        hospitalBtn.id = 'hospitalBtn';
+                        hospitalBtn.innerHTML = 'Construir Hospital (+20% felicidade)<br><span class="cost">Custo: R$ 8.000</span>';
+                        hospitalBtn.onclick = () => build('hospital');
+                        actionsDiv.insertBefore(hospitalBtn, actionsDiv.lastChild);
+                    }
+                }
+            }
+        }
+
+        // Inicializa o jogo
+        updateUI();
+        addEvent("Construa casas para aumentar sua população e serviços básicos para manter a felicidade.", "success");
+    </script>
+</body>
+</html>
